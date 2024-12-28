@@ -1,0 +1,32 @@
+body {
+  margin-inline: auto;
+  max-width: 750px;
+  & > * {
+    text-align: center;
+  }
+}
+button {
+  display: block;
+  margin-inline: auto;
+  width: fit-content;
+}
+
+.iframe-area {
+  width: 100%;
+  overflow-y: hidden;
+  transition: max-height 0.5s ease;
+  height: 500px;
+  display: grid;
+  &.photo {
+    height: 0;
+    &.active {
+      height: 500px;
+    }
+  }
+  & iframe {
+    border-radius: 25px;
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+  }
+}
