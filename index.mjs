@@ -161,6 +161,17 @@ app.get('/base64Upload', async (req, res) => {
   res.json({status: 'success', message: `Wrote to file "${fPath}" please use that as the url param please`})
 });
 
+app.get('*', function(req, res) {
+  var path = req.path
+  if (path.startsWith('/')) path = path.slice(1)
+  if (path.endsWith('/')) path = path.slice(0, -1)
+  if (!path.includes('.')) path = `${path}.html`
+  if (!fs.existsSync(`./${path}`)) {
+    path = '404.html'
+  }
+  res.sendFile(path, {root: '.'})
+})
+
 app.listen(3000, () => {
   console.log('Example app listening on port 3000!');
 });
