@@ -1,3 +1,4 @@
+import multer from 'multer'; 
 import FormData from 'form-data';
 
 import request from 'request';
