@@ -10,7 +10,7 @@ import express from 'express';
 const app = express();
 
 const port = 3000
-const url = "https://api.edenai.run/v2/workflow/9c7ef864-8d59-4ebf-87c6-3fde471dc10b/execution/"
+const apiUrl = "https://api.edenai.run/v2/workflow/9c7ef864-8d59-4ebf-87c6-3fde471dc10b/execution/"
 import useErrorTemplate from './error.mjs';
 
 async function startExecution(url) {
@@ -28,8 +28,7 @@ async function startExecution(url) {
 
 
   form.append('file', fs.createReadStream(`./temp/${fName}`), fName);
-
-  var response = await fetch(url, {
+  var response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
       ...form.getHeaders(), // Add FormData headers
@@ -41,29 +40,34 @@ async function startExecution(url) {
   return json
 }
 
-async function getExecution(id, res, i) {
-  const response = await fetch(`${url}/${id}`.replaceAll('//', '/'), {
+async function getExecution(id) {
+  const response = await fetch(`${apiUrl}/${id}`.replaceAll('//', '/'), {
     headers: {
       "Content-Type": "application/json",
       'Authorization': `Bearer ${process.env.TOKEN}`
     },
   })
   const result = await response.json();
+  return result
+}
+
+async function getExecutionUntilFound(id, res, i) {
+  const result = getExecution(id);
 
   if (!result.content) result.content = {};
   if (!result.content.status) result.content.status = 'error';
 
   if (i > 60) {
-    res.status(408).send(useErrorTemplate(408, `Session Timeout, please try again later.\nYou can get the execution again on its own by using the /getExecution endpoint with the id of the execution which is "${id}"`))
+    res.status(408).send(useErrorTemplate(408, `Session Timeout, please try again later.`))
     return
   }
 
   switch (result.content.status) {
     case 'succeded':
-      res.send(result.content.result.results.image__background_removal);
+      res.status(200).send(result.content.result.results.image__background_removal);
       break;
     case 'processing': 
-      setTimeout(() => getExecution(id, res, i++), 5000);
+      setTimeout(() => getExecutionUntilFound(id, res, i++), 5000);
       break
     default:
       res.send(result);
@@ -113,17 +117,27 @@ app.get('/', (req, res) => {
 })
 
 app.get('/remove', async (req, res) => {
-  var execution = startExecution(req.query.url)
-  getExecution(execution.id, res, 0)
+  var execution = await startExecution(req.query.url)
+  getExecutionUntilFound(execution.id, res, 1)
 });
 
-app.get('/startExecution', (req, res) => {
-  var execution = startExecution(req.query.url)
+app.get('/startExecution', async (req, res) => {
+  var execution = await startExecution(req.query.url)
   res.json(execution)
 });
 
 app.get('/getExecution', async (req, res) => {
-  getExecution(req.query.id, res, 0)
+  var result = await getExecution(req.query.id)
+  switch (result.content.status) {
+    case 'succeded':
+      res.status(200).json(result.content.result.results.image__background_removal);
+      break;
+    case 'processing': 
+      res.json(result.content)
+      break
+    default:
+      res.json(result);
+  }
 });
 
 app.get('/upload', (req, res) => {
