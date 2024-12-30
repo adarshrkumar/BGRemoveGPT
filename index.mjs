@@ -10,7 +10,7 @@ import express from 'express';
 const app = express();
 
 const port = 3000
-const apiUrl = "https://api.edenai.run/v2/workflow/9c7ef864-8d59-4ebf-87c6-3fde471dc10b/execution/"
+const apiUrl = 'https://api.edenai.run/v2/workflow/9c7ef864-8d59-4ebf-87c6-3fde471dc10b/execution/'
 import useErrorTemplate from './error.mjs';
 
 async function startExecution(url) {
@@ -43,7 +43,7 @@ async function startExecution(url) {
 async function getExecution(id) {
   const response = await fetch(`${apiUrl}/${id}`.replaceAll('//', '/'), {
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       'Authorization': `Bearer ${process.env.TOKEN}`
     },
   })
@@ -78,7 +78,7 @@ var storage = multer.diskStorage({
   destination: function (req, file, callback) {
 
     // Uploads is the Upload_folder_name
-    callback(null, "temp")
+    callback(null, 'temp')
   },
   filename: function (req, file, callback) {
     fName = file.originalname
@@ -107,10 +107,10 @@ var upload = multer({
       return callback(null, fName);
     }
 
-    callback("Error: File upload only supports the " + "following filetypes - " + filetypes, null);
+    callback('Error: File upload only supports the following filetypes - ' + filetypes, null);
   }
   // mypic is the name of file attribute
-}).single("image");
+}).single('image');
 
 app.get('/', (req, res) => {
   res.redirect('/remove');
@@ -144,7 +144,7 @@ app.get('/upload', (req, res) => {
   res.sendFile('/upload.html', { root: '.' });
 });
 
-app.post("/uploadFile",function (req, res) {
+app.post('/uploadFile', (req, res) => {
   // Error MiddleWare for multer file upload, so if any
   // error occurs, the image would not be uploaded!
   upload(req, res, function(err) {
@@ -178,13 +178,14 @@ app.post("/uploadFile",function (req, res) {
   })
 })
 
-app.get('*', function(req, res) {
+app.get('*', (req, res) =>{
   var path = req.path
   if (path.startsWith('/')) path = path.slice(1)
   if (path.endsWith('/')) path = path.slice(0, -1)
   if (!path.includes('.')) path = `${path}.html`
   if (!fs.existsSync(`./${path}`)) {
-    path = '404.html'
+    useErrorTemplate(404, `Page not found: ${path}`)
+    return
   }
   res.sendFile(path, {root: '.'})
 })
