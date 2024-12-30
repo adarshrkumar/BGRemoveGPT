@@ -13,6 +13,34 @@ const port = 3000
 const url = "https://api.edenai.run/v2/workflow/9c7ef864-8d59-4ebf-87c6-3fde471dc10b/execution/"
 import useErrorTemplate from './error.mjs';
 
+async function startExecution(url) {
+  const form = new FormData();
+  var fName = encodeURIComponent(url || 'default-image.png');
+  
+  if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+  
+  if (fName === 'default-image.png') {
+    fs.copyFileSync(`./default-image.png`, `./temp/${fName}`)
+  }
+  if (!fs.existsSync(`./temp/${fName}`)) {
+    request(url).pipe(fs.createWriteStream(`./temp/${fName}`))
+  }
+
+
+  form.append('file', fs.createReadStream(`./temp/${fName}`), fName);
+
+  var response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      ...form.getHeaders(), // Add FormData headers
+      'Authorization': `Bearer ${process.env.TOKEN}`
+    },
+    body: form
+  })
+  var json = await response.json()
+  return json
+}
+
 async function getExecution(id, res, i) {
   const response = await fetch(`${url}/${id}`.replaceAll('//', '/'), {
     headers: {
@@ -85,31 +113,13 @@ app.get('/', (req, res) => {
 })
 
 app.get('/remove', async (req, res) => {
-  const form = new FormData();
-  var fName = encodeURIComponent(req.query.url || 'default-image.png');
-  
-  if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
-  
-  if (fName === 'default-image.png') {
-    fs.copyFileSync(`./default-image.png`, `./temp/${fName}`)
-  }
-  if (!fs.existsSync(`./temp/${fName}`)) {
-    request(url).pipe(fs.createWriteStream(`./temp/${fName}`))
-  }
+  var execution = startExecution(req.query.url)
+  getExecution(execution.id, res, 0)
+});
 
-
-  form.append('file', fs.createReadStream(`./temp/${fName}`), fName);
-
-  var response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      ...form.getHeaders(), // Add FormData headers
-      'Authorization': `Bearer ${process.env.TOKEN}`
-    },
-    body: form
-  })
-  var json = await response.json()
-  getExecution(json.id, res, 0)
+app.get('/startExecution', (req, res) => {
+  var execution = startExecution(req.query.url)
+  res.json(execution)
 });
 
 app.get('/upload', (req, res) => {
