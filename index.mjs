@@ -15,7 +15,9 @@ import useErrorTemplate from './error.mjs';
 
 async function startExecution(url) {
   const form = new FormData();
-  var fName = encodeURIComponent(url || 'default-image.png');
+  var fName = decodeURIComponent(url || 'default-image.png').replaceAll('/', '_');
+  if (fName.includes(':__')) fName = fName.split(':__')[1];
+  if (fName.includes('?')) fName = fName.split('?')[0];
   
   if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
   
@@ -25,7 +27,6 @@ async function startExecution(url) {
   if (!fs.existsSync(`./temp/${fName}`)) {
     request(url).pipe(fs.createWriteStream(`./temp/${fName}`))
   }
-
 
   form.append('file', fs.createReadStream(`./temp/${fName}`), fName);
   var response = await fetch(apiUrl, {
