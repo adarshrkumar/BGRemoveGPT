@@ -9,8 +9,8 @@ import fs from 'fs';
 import express from 'express';
 const app = express();
 
+const port = 3000
 const url = "https://api.edenai.run/v2/workflow/9c7ef864-8d59-4ebf-87c6-3fde471dc10b/execution/"
-
 import useErrorTemplate from './error.mjs';
 
 async function getExecution(id, res, i) {
@@ -80,23 +80,27 @@ var upload = multer({
   // mypic is the name of file attribute
 }).single("image");
 
-app.get('/', async (req, res) => {
+app.get('/', (req, res) => {
+  res.redirect('/remove');
+})
+
+app.get('/remove', async (req, res) => {
   const form = new FormData();
-  var fName = decodeURIComponent(req.query.url || 'default-image.png');
-
+  var fName = encodeURIComponent(req.query.url || 'default-image.png');
+  
   if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
-
+  
   if (fName === 'default-image.png') {
     fs.copyFileSync(`./default-image.png`, `./temp/${fName}`)
   }
-  if (!fs.existsSync(fs.createWriteStream(`./temp/${fName}`))) {
+  if (!fs.existsSync(`./temp/${fName}`)) {
     request(url).pipe(fs.createWriteStream(`./temp/${fName}`))
   }
 
 
   form.append('file', fs.createReadStream(`./temp/${fName}`), fName);
 
-  await fetch(url, {
+  var response = await fetch(url, {
     method: 'POST',
     headers: {
       ...form.getHeaders(), // Add FormData headers
@@ -104,8 +108,8 @@ app.get('/', async (req, res) => {
     },
     body: form
   })
-    .then(response => response.json())
-    .then(json  => getExecution(json.id, res, 0))
+  var json = await response.json()
+  getExecution(json.id, res, 0)
 });
 
 app.get('/upload', (req, res) => {
@@ -173,6 +177,6 @@ app.get('*', function(req, res) {
   res.sendFile(path, {root: '.'})
 })
 
-app.listen(3000, () => {
-  console.log('Example app listening on port 3000!');
+app.listen(port, () => {
+  console.log(`App listening on port ${port} (http://localhost:${port})!`);
 });
