@@ -122,6 +122,10 @@ app.get('/startExecution', (req, res) => {
   res.json(execution)
 });
 
+app.get('/getExecution', async (req, res) => {
+  getExecution(req.query.id, res, 0)
+});
+
 app.get('/upload', (req, res) => {
   res.sendFile('/upload.html', { root: '.' });
 });
@@ -159,22 +163,6 @@ app.post("/uploadFile",function (req, res) {
     }
   })
 })
-
-app.get('/getExecution', async (req, res) => {
-  getExecution(req.query.id, res, 0)
-});
-
-app.get('/base64Upload', async (req, res) => {
-  var fPath = decodeURIComponent(req.query.path) || 'error';
-  var path = fPath.replaceAll('/', '_')
-  var content = req.query.b64content
-
-  if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
-
-  if (fName !== 'error') fs.writeFileSync(`./temp/${path}.png`, content, 'base64')
-
-  res.json({status: 'success', message: `Wrote to file "${fPath}" please use that as the url param please`})
-});
 
 app.get('*', function(req, res) {
   var path = req.path
