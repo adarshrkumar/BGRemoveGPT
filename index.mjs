@@ -12,31 +12,40 @@ const app = express();
 const port = 3000
 const apiUrl = 'https://api.edenai.run/v2/workflow/9c7ef864-8d59-4ebf-87c6-3fde471dc10b/execution/'
 import useErrorTemplate from './error.mjs';
+import { encode } from 'punycode';
+import e from 'express';
 
 function removeLastPartOfExtFromFName(name) {
-  var name = name.split('.').slice(0, -1).join('.')
+  if (name.includes('.')) name = name.split('.').slice(0, -1).join('.')
   return name
 }
 
-async function startExecution(url, extension) {
-  const form = new FormData();
-  var fName = decodeURIComponent(url || 'default-image.png').replaceAll('/', '_');
+function uploadFromUrl(url, extension) {
+  var fName = decodeURIComponent(url || 'default-image.png').replaceAll('/', '_').replaceAll('\.', '__');
   if (fName.includes(':__')) fName = fName.split(':__')[1];
   if (fName.includes('?')) fName = fName.split('?')[0];
+  fName = encodeURIComponent(fName)
   
   if (extension) {
     fName = removeLastPartOfExtFromFName(fName)
     fName = `${fName}.${extension}`
   }
-
+  
   if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
   
   if (fName === 'default-image.png') {
     fs.copyFileSync(`./default-image.png`, `./temp/${fName}`)
   }
+  
   if (!fs.existsSync(`./temp/${fName}`)) {
     request(url).pipe(fs.createWriteStream(`./temp/${fName}`))
   }
+
+  return fName
+}
+
+async function startExecution(fName) {
+  const form = new FormData();
 
   form.append('file', fs.createReadStream(`./temp/${fName}`), fName);
   var response = await fetch(apiUrl, {
@@ -63,10 +72,10 @@ async function getExecution(id) {
 }
 
 async function getExecutionUntilFound(id, res, i) {
-  const result = getExecution(id);
+  const result = await getExecution(id);
 
   if (!result.content) result.content = {};
-  if (!result.content.status) result.content.status = 'error';
+  if (!result.content.status) result.content.status = {name: 'error', description: 'No execution found OR error on code.'};
 
   if (i > 60) {
     res.status(408).send(useErrorTemplate(408, `Session Timeout, please try again later.`))
@@ -128,13 +137,20 @@ app.get('/', (req, res) => {
 })
 
 app.get('/remove', async (req, res) => {
-  var execution = await startExecution(req.query.url, req.query.extension)
-  getExecutionUntilFound(execution.id, res, 1)
+  var fName = uploadFromUrl(req.query.url, req.query.extension)
+  await startExecution(fName)
+    .then(execution => getExecutionUntilFound(execution.id, res, 1))
+});
+
+app.get('/uploadFromUrl', (req, res) => {
+  var fName = uploadFromUrl(req.query.url, req.query.extension)
+
+  res.json({ filename: fName })
 });
 
 app.get('/startExecution', async (req, res) => {
-  var execution = await startExecution(req.query.url, req.query.extension)
-  res.json(execution)
+  var execution = await startExecution(req.query.fname)
+  res.sendFile(execution.replaceAll('/', '\\'), { root: '.' });
 });
 
 app.get('/getExecution', async (req, res) => {
