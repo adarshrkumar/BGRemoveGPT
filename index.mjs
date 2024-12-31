@@ -13,12 +13,22 @@ const port = 3000
 const apiUrl = 'https://api.edenai.run/v2/workflow/9c7ef864-8d59-4ebf-87c6-3fde471dc10b/execution/'
 import useErrorTemplate from './error.mjs';
 
-async function startExecution(url) {
+function removeLastPartOfExtFromFName(name) {
+  var name = name.split('.').slice(0, -1).join('.')
+  return name
+}
+
+async function startExecution(url, extention) {
   const form = new FormData();
   var fName = decodeURIComponent(url || 'default-image.png').replaceAll('/', '_');
   if (fName.includes(':__')) fName = fName.split(':__')[1];
   if (fName.includes('?')) fName = fName.split('?')[0];
   
+  if (extention) {
+    fName = removeLastPartOfExtFromFName(fName)
+    fName = `${fName}.${extention}`
+  }
+
   if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
   
   if (fName === 'default-image.png') {
@@ -118,12 +128,12 @@ app.get('/', (req, res) => {
 })
 
 app.get('/remove', async (req, res) => {
-  var execution = await startExecution(req.query.url)
+  var execution = await startExecution(req.query.url, req.query.extention)
   getExecutionUntilFound(execution.id, res, 1)
 });
 
 app.get('/startExecution', async (req, res) => {
-  var execution = await startExecution(req.query.url)
+  var execution = await startExecution(req.query.url, req.query.extention)
   res.json(execution)
 });
 
