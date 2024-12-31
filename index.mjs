@@ -152,7 +152,7 @@ app.get('/uploadFromUrl', (req, res) => {
 
 app.get('/startExecution', async (req, res) => {
   var execution = await startExecution(req.query.fname)
-  res.sendFile(execution.replaceAll('/', '\\'), { root: '.' });
+  res.json(execution);
 });
 
 app.get('/getExecution', async (req, res) => {
