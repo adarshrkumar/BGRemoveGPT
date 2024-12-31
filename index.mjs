@@ -18,15 +18,15 @@ function removeLastPartOfExtFromFName(name) {
   return name
 }
 
-async function startExecution(url, extention) {
+async function startExecution(url, extension) {
   const form = new FormData();
   var fName = decodeURIComponent(url || 'default-image.png').replaceAll('/', '_');
   if (fName.includes(':__')) fName = fName.split(':__')[1];
   if (fName.includes('?')) fName = fName.split('?')[0];
   
-  if (extention) {
+  if (extension) {
     fName = removeLastPartOfExtFromFName(fName)
-    fName = `${fName}.${extention}`
+    fName = `${fName}.${extension}`
   }
 
   if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
@@ -128,12 +128,12 @@ app.get('/', (req, res) => {
 })
 
 app.get('/remove', async (req, res) => {
-  var execution = await startExecution(req.query.url, req.query.extention)
+  var execution = await startExecution(req.query.url, req.query.extension)
   getExecutionUntilFound(execution.id, res, 1)
 });
 
 app.get('/startExecution', async (req, res) => {
-  var execution = await startExecution(req.query.url, req.query.extention)
+  var execution = await startExecution(req.query.url, req.query.extension)
   res.json(execution)
 });
 
