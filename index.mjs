@@ -139,8 +139,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/remove', async (req, res) => {
-  var fName = uploadFromUrl(req.query.url, req.query.extension)
-  await startExecution(fName)
+  await startExecution('')
     .then(execution => getExecutionUntilFound(execution.id, res, 1))
 });
 
@@ -151,8 +150,8 @@ app.get('/uploadFromUrl', (req, res) => {
 });
 
 app.get('/startExecution', async (req, res) => {
-  var execution = await startExecution(req.query.fname)
-  res.json(execution);
+  await startExecution(req.query.fname)
+    .then(execution => res.json(execution))
 });
 
 app.get('/getExecution', async (req, res) => {
