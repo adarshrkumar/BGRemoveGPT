@@ -45,6 +45,8 @@ function uploadFromUrl(url, extension) {
 }
 
 async function startExecution(fName) {
+  fName = encodeURIComponent(fName)
+  
   const form = new FormData();
 
   form.append('file', fs.createReadStream(`./temp/${fName}`), fName);
