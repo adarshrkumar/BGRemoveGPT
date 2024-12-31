@@ -47,6 +47,10 @@ function uploadFromUrl(url, extension) {
 async function startExecution(fName) {
   fName = encodeURIComponent(fName)
   
+  if (!fs.existsSync(`./temp/${fName}`)) {
+    return {error: 'File not found, please upload it first.'}
+  }
+
   const form = new FormData();
 
   form.append('file', fs.createReadStream(`./temp/${fName}`), fName);
