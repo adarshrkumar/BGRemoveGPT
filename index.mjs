@@ -178,7 +178,7 @@ app.post('/uploadFile', async (req, res) => {
     // mypic is the name of file attribute
   }).single('image');
   
-  
+  if (!fs.existsSync('./temp')) fs.mkdirSync('./temp')
 
   // Error MiddleWare for multer file upload, so if any
   // error occurs, the image would not be uploaded!
