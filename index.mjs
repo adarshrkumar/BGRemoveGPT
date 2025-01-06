@@ -12,8 +12,6 @@ const app = express();
 const port = 3000
 const apiUrl = 'https://api.edenai.run/v2/workflow/9c7ef864-8d59-4ebf-87c6-3fde471dc10b/execution/'
 import useErrorTemplate from './error.mjs';
-import { encode } from 'punycode';
-import e from 'express';
 
 function removeLastPartOfExtFromFName(name) {
   if (name.includes('.')) name = name.split('.').slice(0, -1).join('.')
