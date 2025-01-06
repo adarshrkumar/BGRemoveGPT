@@ -5,6 +5,7 @@ import request from 'request';
 import fetch from 'node-fetch';
 
 import fs from 'fs';
+import path from 'path';
 
 import express from 'express';
 const app = express();
@@ -98,42 +99,6 @@ async function getExecutionUntilFound(id, res, i) {
   }
 }
 
-var storage = multer.diskStorage({
-  destination: function (req, file, callback) {
-
-    // Uploads is the Upload_folder_name
-    callback(null, 'temp')
-  },
-  filename: function (req, file, callback) {
-    callback(null, file)
-  }
-})
-
-// Define the maximum size for uploading
-// picture i.e. 1 MB. it is optional
-const maxSize = 1000 * 1000 * 1000;
-
-var upload = multer({
-  storage: storage,
-  limits: { fileSize: maxSize },
-  fileFilter: function (req, file, callback) {
-
-    // Set the filetypes, it is optional
-    var filetypes = /jpeg|jpg|png|webp|gif/;
-    var mimetype = filetypes.test(file.mimetype);
-
-    var extname = path.extname(file.originalname).toLowerCase()
-    extname = filetypes.test(extname);
-
-    if (mimetype && extname) {
-      return callback(null, file);
-    }
-
-    callback('Error: File upload only supports the following filetypes - ' + filetypes, null);
-  }
-  // mypic is the name of file attribute
-}).single('image');
-
 app.get('/', (req, res) => {
   res.redirect('/remove');
 })
@@ -172,10 +137,52 @@ app.get('/upload', (req, res) => {
   res.sendFile('/upload.html', { root: '.' });
 });
 
-app.post('/uploadFile', (req, res) => {
+app.post('/uploadFile', async (req, res) => {
+  var fName = ''
+
+  var storage = multer.diskStorage({
+    destination: function(req, file, callback) {
+  
+      // Uploads is the Upload_folder_name
+      callback(null, 'temp')
+    },
+    filename: function(req, file, callback) {
+      fName = file.originalname
+      callback(null, file.originalname)
+    }
+  })
+  
+  // Define the maximum size for uploading
+  // picture i.e. 1 MB. it is optional
+  const maxSize = 1000 * 1000 * 1000;
+  
+  var upload = multer({
+    storage: storage,
+    limits: { fileSize: maxSize },
+    fileFilter: function(req, file, callback) {
+  
+      // Set the filetypes, it is optional
+      var filetypes = /jpeg|jpg|png|webp|gif/;
+      var mimetype = filetypes.test(file.mimetype);
+  
+      var extname = path.extname(file.originalname).toLowerCase()
+      extname = filetypes.test(extname);
+  
+      if (mimetype && extname) {
+        fName = file.originalname
+        return callback(null, file.originalname);
+      }
+  
+      callback('Error: File upload only supports the following filetypes - ' + filetypes, null);
+    }
+    // mypic is the name of file attribute
+  }).single('image');
+  
+  
+
   // Error MiddleWare for multer file upload, so if any
   // error occurs, the image would not be uploaded!
-  upload(req, res, function(err, file) {
+  await upload(req, res, function(err, file) {
     if(err) {
       // ERROR occurred (here it can be occurred due
       // to uploading image of size greater than
@@ -188,7 +195,7 @@ app.post('/uploadFile', (req, res) => {
 
       var userMessage = `Hello! You have successfully uploaded your file. PLEASE COPY-PASTE THIS WHOLE JSON (THE WHOLE PAGE CONTENT) BACK INTO THE GPTs CHAT WINDOW, THANKS!`
 
-      res.json({ message4User: userMessage,url: file.originalname })
+      res.json({ message4User: userMessage, filename: fName })
     }
   })
 })
