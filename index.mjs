@@ -105,8 +105,7 @@ var storage = multer.diskStorage({
     callback(null, 'temp')
   },
   filename: function (req, file, callback) {
-    fName = file.originalname
-    callback(null, file.originalname)
+    callback(null, file)
   }
 })
 
@@ -127,8 +126,7 @@ var upload = multer({
     extname = filetypes.test(extname);
 
     if (mimetype && extname) {
-      fName = file.originalname
-      return callback(null, fName);
+      return callback(null, file);
     }
 
     callback('Error: File upload only supports the following filetypes - ' + filetypes, null);
@@ -177,7 +175,7 @@ app.get('/upload', (req, res) => {
 app.post('/uploadFile', (req, res) => {
   // Error MiddleWare for multer file upload, so if any
   // error occurs, the image would not be uploaded!
-  upload(req, res, function(err) {
+  upload(req, res, function(err, file) {
     if(err) {
       // ERROR occurred (here it can be occurred due
       // to uploading image of size greater than
@@ -187,23 +185,10 @@ app.post('/uploadFile', (req, res) => {
     else {
       // SUCCESS, image successfully uploaded
       // res.send(fName)
-      var url = `/chat?`
-      
-      var hasParent = req.query.hasParent
-      if (!!hasParent) url = `/upload?sucess=true&`
-      
-      url += `filelocation=temp-storage&name=${fName}`
-      
-      var p = req.query.p
-      if (!!p) url += `&prompt=${p}`
 
-      var t = req.query.t
-      if (!!t) url += `&type=${t}`
+      var userMessage = `Hello! You have successfully uploaded your file. PLEASE COPY-PASTE THIS WHOLE JSON (THE WHOLE PAGE CONTENT) BACK INTO THE GPTs CHAT WINDOW, THANKS!`
 
-      var isBulk = req.query.isBulk
-      if (!!isBulk) url += `&isBulk=${isBulk}`
-      
-      res.redirect(url)
+      res.json({ message4User: userMessage,url: file.originalname })
     }
   })
 })
