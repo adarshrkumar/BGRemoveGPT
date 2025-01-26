@@ -120,6 +120,10 @@ app.get('/startExecution', async (req, res) => {
 });
 
 app.get('/getExecution', async (req, res) => {
+  if (!req.query.id) {
+    res.json({error: 'Please provide an execution ID.'})
+    return
+  }
   var result = await getExecution(req.query.id)
   switch (result.content.status) {
     case 'succeded':
