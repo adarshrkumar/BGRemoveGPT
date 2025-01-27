@@ -12,7 +12,9 @@ const app = express();
 
 const port = 3000
 const apiUrl = 'https://api.edenai.run/v2/workflow/9c7ef864-8d59-4ebf-87c6-3fde471dc10b/execution/'
+
 import useErrorTemplate from './error.mjs';
+import useUploadHTML from './upload.mjs';
 
 function removeLastPartOfExtFromFName(name) {
   if (name.includes('.')) name = name.split('.').slice(0, -1).join('.')
@@ -104,7 +106,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/remove', async (req, res) => {
-  await startExecution('')
+  await startExecution(req.query.fname || '')
     .then(execution => getExecutionUntilFound(execution.id, res, 1))
 });
 
@@ -137,71 +139,81 @@ app.get('/getExecution', async (req, res) => {
   }
 });
 
-app.get('/upload', (req, res) => {
-  res.sendFile('/upload.html', { root: '.' });
-});
+['upload', 'uploadRemove'].forEach((path) => {
 
-app.post('/uploadFile', async (req, res) => {
-  var fName = ''
+    app.get(`/${path}`, (req, res) => {
+      res.status(200).send(useErrorTemplate(path))
+    });
+    
 
-  var storage = multer.diskStorage({
-    destination: function(req, file, callback) {
-  
-      // Uploads is the Upload_folder_name
-      callback(null, 'temp')
-    },
-    filename: function(req, file, callback) {
-      fName = file.originalname
-      callback(null, file.originalname)
-    }
-  })
-  
-  // Define the maximum size for uploading
-  // picture i.e. 1 MB. it is optional
-  const maxSize = 1000 * 1000 * 1000;
-  
-  var upload = multer({
-    storage: storage,
-    limits: { fileSize: maxSize },
-    fileFilter: function(req, file, callback) {
-  
-      // Set the filetypes, it is optional
-      var filetypes = /jpeg|jpg|png|webp|gif/;
-      var mimetype = filetypes.test(file.mimetype);
-  
-      var extname = path.extname(file.originalname).toLowerCase()
-      extname = filetypes.test(extname);
-  
-      if (mimetype && extname) {
-        fName = file.originalname
-        return callback(null, file.originalname);
-      }
-  
-      callback('Error: File upload only supports the following filetypes - ' + filetypes, null);
-    }
-    // mypic is the name of file attribute
-  }).single('image');
-  
-  if (!fs.existsSync('./temp')) fs.mkdirSync('./temp')
+    app.post(`/${path}File`, async (req, res) => {
+      var fName = ''
+    
+      var storage = multer.diskStorage({
+        destination: function(req, file, callback) {
+      
+          // Uploads is the Upload_folder_name
+          callback(null, 'temp')
+        },
+        filename: function(req, file, callback) {
+          fName = file.originalname
+          callback(null, file.originalname)
+        }
+      })
+      
+      // Define the maximum size for uploading
+      // picture i.e. 1 MB. it is optional
+      const maxSize = 1000 * 1000 * 1000;
+      
+      var upload = multer({
+        storage: storage,
+        limits: { fileSize: maxSize },
+        fileFilter: function(req, file, callback) {
+      
+          // Set the filetypes, it is optional
+          var filetypes = /jpeg|jpg|png|webp|gif/;
+          var mimetype = filetypes.test(file.mimetype);
+      
+          var extname = path.extname(file.originalname).toLowerCase()
+          extname = filetypes.test(extname);
+      
+          if (mimetype && extname) {
+            fName = file.originalname
+            return callback(null, file.originalname);
+          }
+      
+          callback('Error: File upload only supports the following filetypes - ' + filetypes, null);
+        }
+        // mypic is the name of file attribute
+      }).single('image');
+      
+      if (!fs.existsSync('./temp')) fs.mkdirSync('./temp')
+    
+      // Error MiddleWare for multer file upload, so if any
+      // error occurs, the image would not be uploaded!
+      await upload(req, res, function(err, file) {
+        if(err) {
+          // ERROR occurred (here it can be occurred due
+          // to uploading image of size greater than
+          // 1MB or uploading different file type)
+          res.send(err)
+        }
+        else {
+          // SUCCESS, image successfully uploaded
+          // res.send(fName)
+    
+          var userMessage = `Hello! You have successfully uploaded your file. PLEASE COPY-PASTE THIS WHOLE JSON (THE WHOLE PAGE CONTENT) BACK INTO THE GPTs CHAT WINDOW, THANKS!`
+          
+          if (path === 'uploadRemove') {
+            res.redirect(`/remove?fname=${fName}`)
+            return
+          }
 
-  // Error MiddleWare for multer file upload, so if any
-  // error occurs, the image would not be uploaded!
-  await upload(req, res, function(err, file) {
-    if(err) {
-      // ERROR occurred (here it can be occurred due
-      // to uploading image of size greater than
-      // 1MB or uploading different file type)
-      res.send(err)
-    }
-    else {
-      // SUCCESS, image successfully uploaded
-      // res.send(fName)
-
-      var userMessage = `Hello! You have successfully uploaded your file. PLEASE COPY-PASTE THIS WHOLE JSON (THE WHOLE PAGE CONTENT) BACK INTO THE GPTs CHAT WINDOW, THANKS!`
-
-      res.json({ message4User: userMessage, filename: fName })
-    }
-  })
+          res.json({ message4User: userMessage, filename: fName })
+        }
+      })
+    })
+    
 })
 
 app.get('*', (req, res) => {
