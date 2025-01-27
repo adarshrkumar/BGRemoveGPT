@@ -139,14 +139,14 @@ app.get('/getExecution', async (req, res) => {
   }
 });
 
-['upload', 'uploadRemove'].forEach((path) => {
+['upload', 'uploadRemove'].forEach((p) => {
 
-    app.get(`/${path}`, (req, res) => {
-      res.status(200).send(useUploadHTML(path))
+    app.get(`/${p}`, (req, res) => {
+      res.status(200).send(useUploadHTML(p))
     });
     
 
-    app.post(`/${path}File`, async (req, res) => {
+    app.post(`/${p}File`, async (req, res) => {
       var fName = ''
     
       var storage = multer.diskStorage({
@@ -204,7 +204,7 @@ app.get('/getExecution', async (req, res) => {
     
           var userMessage = `Hello! You have successfully uploaded your file. PLEASE COPY-PASTE THIS WHOLE JSON (THE WHOLE PAGE CONTENT) BACK INTO THE GPTs CHAT WINDOW, THANKS!`
           
-          if (path === 'uploadRemove') {
+          if (req.path === '/uploadRemoveFile') {
             res.redirect(`/remove?fname=${fName}`)
             return
           }
