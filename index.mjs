@@ -77,12 +77,30 @@ async function getExecution(id) {
       'Authorization': `Bearer ${process.env.TOKEN}`
     },
   })
-  const result = await response.json();
-  return result
+
+  var result = await response.text();
+  var isJSON = false
+
+  if (
+    (result.startsWith('[') && result.endsWith(']')) || 
+    (result.startsWith('{') && result.endsWith('}'))
+  ) {
+    result = await response.json();
+    isJSON = true
+  }
+  
+  return {isJSON: isJSON, result: result}
 }
 
 async function getExecutionUntilFound(id, res, i) {
   const result = await getExecution(id);
+
+  if (!result.isJSON) {
+    res.status(500).send(result.result)
+    return
+  }
+
+  result = result.result
 
   if (!result.content) result.content = {};
   if (!result.content.status) result.content.status = {name: 'error', description: 'No execution found OR error on code.'};
