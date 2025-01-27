@@ -13,5 +13,6 @@ coverage/
 .idea/
 .vscode/
 *.iml
+.env
 
 temp/
