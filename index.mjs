@@ -85,7 +85,7 @@ async function getExecutionUntilFound(id, res, i) {
   if (!result.content.status) result.content.status = {name: 'error', description: 'No execution found OR error on code.'};
 
   if (i > 60) {
-    res.status(408).send(useErrorTemplate(408, `Session Timeout, please try again later.`))
+    res.status(408).send(useUploadHTML(408, `Session Timeout, please try again later.`))
     return
   }
 
@@ -102,7 +102,7 @@ async function getExecutionUntilFound(id, res, i) {
 }
 
 app.get('/', (req, res) => {
-  res.redirect('/remove');
+  res.redirect('/uploadRemove');
 })
 
 app.get('/remove', async (req, res) => {
