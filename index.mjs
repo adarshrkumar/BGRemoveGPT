@@ -50,14 +50,17 @@ function uploadFromUrl(url, extension) {
 
 async function startExecution(fName) {
   fName = encodeURIComponent(fName)
+
+  var fPath = `./temp/${fName}`
+  if (!fName) fPath = 'default-image.png'
   
-  if (!fs.existsSync(`./temp/${fName}`)) {
+  if (!fs.existsSync(fPath)) {
     return {error: 'File not found, please upload it first.'}
   }
 
   const form = new FormData();
 
-  form.append('file', fs.createReadStream(`./temp/${fName}`), fName);
+  form.append('file', fs.createReadStream(fPath), fName);
   var response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -85,7 +88,7 @@ async function getExecution(id) {
     (result.startsWith('[') && result.endsWith(']')) || 
     (result.startsWith('{') && result.endsWith('}'))
   ) {
-    result = await response.json();
+    result = JSON.parse(result)
     isJSON = true
   }
   
@@ -93,7 +96,7 @@ async function getExecution(id) {
 }
 
 async function getExecutionUntilFound(id, res, i) {
-  const result = await getExecution(id);
+  var result = await getExecution(id);
 
   if (!result.isJSON) {
     res.status(500).send(result.result)
